@@ -18,6 +18,12 @@ public class CartDataAccess : ICartDataAccess
         }
     }
 
+    public Cart AddItemToCart(Guid cartId, CartItem item)
+    {
+        throw new NotImplementedException();
+    }
+
+
     public void RemoveItemFromCart(Guid cartId, int itemCartId)
     {
         using (var db = new LiteDatabase("CartingService.db"))
