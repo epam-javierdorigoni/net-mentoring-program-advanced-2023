@@ -5,9 +5,9 @@ namespace CartingService.BusinessLogicLayer;
 
 public class CartBusinessService : ICartBusinessService
 {
-    private readonly ICartDataAccess _cartDataAccess;
+    private readonly ICartDataService _cartDataAccess;
 
-    public CartBusinessService(ICartDataAccess cartDataAccess)
+    public CartBusinessService(ICartDataService cartDataAccess)
     {
         _cartDataAccess = cartDataAccess;
     }
@@ -24,43 +24,54 @@ public class CartBusinessService : ICartBusinessService
         return cart.Items;
     }
 
-    public decimal? GetAmmountToPayCart(Guid id)
-    {
-        var cart = _cartDataAccess.GetCartById(id);
-
-        if (cart == null || cart.Items == null || !cart.Items.Any())
-        {
-            return null;
-        }
-
-        var ammountToPay = 0.0m;
-        foreach (var item in cart.Items)
-        {
-            ammountToPay += item.Price;
-        }
-
-        return ammountToPay;
-    }
-
-    public Cart AddItemToCart(Guid cartId, CartItem item) 
-    {
-        // Validation that the Cart doesn't contain the item
-
-
-        // Call the DataAccessLayer to add and persist this new item
-
-        // Return Cart
-        throw new NotImplementedException();
-    }
-
-    public bool RemoveItemFromCart(Guid cartId, int itemCartId) 
+    public Cart? AddItemToCart(Guid cartId, CartItem cartItemToAdd)
     {
         try
         {
-            _cartDataAccess.RemoveItemFromCart(cartId, itemCartId);
-            return true;
+            var cart = _cartDataAccess.GetCartById(cartId);
+
+            if (cart == null)
+            {
+                return null;
+            }
+
+            if (cart.Items.Contains(cartItemToAdd))
+            {
+                throw new CartItemAlreadyAddedException();
+            }
+
+            cart.Items.Add(cartItemToAdd);
+
+            _cartDataAccess.Update(cart);
+            return cart;
         }
-        catch (Exception)
+        catch (CartNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    public bool RemoveItemFromCart(Guid cartId, int cartItemId)
+    {
+        try
+        {
+            var cart = _cartDataAccess.GetCartById(cartId);
+
+            if (cart == null)
+            {
+                return false;
+            }
+
+            var cartItem = cart.Items.Find(x => x.Id == cartItemId);
+
+            if (cartItem == null)
+            {
+                return true;
+            }
+
+            return cart.Items.Remove(cartItem);
+        }
+        catch (CartNotFoundException)
         {
             return false;
         }
